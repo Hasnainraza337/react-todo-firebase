@@ -36,6 +36,8 @@ const Register = () => {
                 uid: user.uid,
                 fullName: fullName,
                 email: email,
+                status: "active",
+                role: "customer",
                 createdAt: serverTimestamp()
             };
 

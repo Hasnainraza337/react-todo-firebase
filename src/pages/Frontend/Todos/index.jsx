@@ -1,33 +1,32 @@
 import { useState, useEffect } from 'react';
 import { Table, Card, Typography, Button, message, Tag, Modal, Form, Input } from 'antd';
 import { DeleteOutlined, EnvironmentOutlined, EditOutlined } from '@ant-design/icons';
-import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import { firestore } from '@/config/firebase';
-import { useParams } from 'react-router-dom';
+import { useAuthContext } from '@/context/AuthContext';
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Item } = Form;
 
 
-const initialState = { title: "", location: "", description: "" }
 
 
 const Todos = () => {
-    const [state, setState] = useState(initialState)
     const [data, setData] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editTodo, setEditTodo] = useState(null);
     const [isLoading, setIsLoading] = useState(false)
     const [form] = Form.useForm();
-    const params = useParams()
+    const { user } = useAuthContext()
 
     // get todos
     const getTodos = async () => {
         setIsLoading(true)
         try {
+            if (!user || !user.uid) return;
             const array = [];
-            const querySnapshot = await getDocs(query(collection(firestore, "todos")));
+            const querySnapshot = await getDocs(query(collection(firestore, "todos"), where("uid", "==", user.uid)));
             querySnapshot.forEach((doc) => {
                 const data = doc.data()
                 array.push(data)
@@ -46,15 +45,14 @@ const Todos = () => {
 
 
     // delete todo
-
     const handleDelete = async (id) => {
         try {
             await deleteDoc(doc(firestore, "todos", id));
             const filteredTodos = data.filter(item => item.id !== id);
             setData(filteredTodos);
-            message.success('Todo deleted successfully');
+            window.toastify("Todo delete Successfully", "success");
         } catch (e) {
-            console.log("Try Again", e)
+            window.toastify("Try Again", "error");
         }
 
     };
@@ -66,40 +64,38 @@ const Todos = () => {
     };
 
     //  update todo
-
     const handleUpdate = async () => {
-        // 1. Ensure we have the ID of the todo being edited
         if (!editTodo?.id) {
-            message.error("No todo selected for update");
+            window.toastify("No todo selected for update", "error");
             return;
         }
 
         try {
             const values = await form.validateFields();
-            setIsLoading(true);
 
             const updatedTodo = {
                 ...values,
                 updatedAt: serverTimestamp()
             };
 
-            const todoRef = doc(firestore, "todos", editTodo.id);
-            await updateDoc(todoRef, updatedTodo);
+            setIsLoading(true);
+
+            await updateDoc(doc(firestore, "todos", editTodo.id), updatedTodo);
 
             const updatedData = data.map((item) =>
-                item.id === editTodo.id ? { ...item, ...values, updatedAt: serverTimestamp() } : item
+                item.id === editTodo.id ? { ...item, ...values, } : item
             );
+
             setData(updatedData);
 
             setIsModalOpen(false);
             setEditTodo(null);
-            message.success('Task updated successfully!');
+            window.toastify('Task updated successfully!', "success");
         } catch (error) {
-            console.error("Update failed:", error);
             if (error.errorFields) {
-                message.error("Please fill in all required fields");
+                window.toastify('Please fill in all required fields', "error");
             } else {
-                message.error("Failed to update database.");
+                window.toastify('Failed to update database.', "error");
             }
         } finally {
             setIsLoading(false);
@@ -178,6 +174,7 @@ const Todos = () => {
                 title="Edit Task"
                 open={isModalOpen}
                 onOk={handleUpdate}
+                loading={isLoading}
                 onCancel={() => setIsModalOpen(false)}
                 okText="Update Todo"
                 okButtonProps={{ className: "bg-blue-600" }}

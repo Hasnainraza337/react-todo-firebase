@@ -24,8 +24,8 @@ const AddTodos = () => {
 
         const { title, location, description } = formData;
 
-        if (!title) return message.error("Enter Your Title!");
-        if (!location) return message.error("Enter Your Location!");
+        if (!title) return window.toastify("Enter Your Title!", "error");
+        if (!location) return window.toastify("Enter Your Title!", "error");
 
         const todo = {
             title,
@@ -33,16 +33,16 @@ const AddTodos = () => {
             description,
         };
         todo.uid = user.uid,
-            todo.id = Math.random().toString(36).slice(2),
+            todo.id = window.getRandomId(),
             todo.createdAt = serverTimestamp(),
 
             setIsProcessing(true)
         try {
             await setDoc(doc(firestore, "todos", todo.id), todo);
-            message.success('Task added successfully!');
+            window.toastify("Task Add successfully", "success")
 
         } catch (e) {
-            message.error("something went wrong while creating todo")
+            window.toastify("something went wrong while creating todo", "error")
         } finally {
             setIsProcessing(false)
         }
@@ -91,10 +91,10 @@ const AddTodos = () => {
                     <Item className="mb-0">
                         <Button
                             type="primary"
+                            htmlType='submit'
                             icon={<PlusOutlined />}
                             size="large"
                             block
-                            htmlType='submit'
                             loading={isProcessing}
                             className="bg-blue-600 h-12 text-base font-semibold"
                             onClick={handleSubmit}

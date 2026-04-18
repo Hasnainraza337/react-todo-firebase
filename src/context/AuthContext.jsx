@@ -32,10 +32,10 @@ const AuthContext = ({ children }) => {
     const handleLogout = () => {
         signOut(auth).then(() => {
             setState(initialState)
-            Window.toastify("Logout Successfull", "success")
+            window.toastify("Logout Successfull", "success")
             navigate("/")
         }).catch((error) => {
-            Window.toastify("Logout Successfull", "error")
+            window.toastify("Logout Successfull", "error")
         });
     }
 
