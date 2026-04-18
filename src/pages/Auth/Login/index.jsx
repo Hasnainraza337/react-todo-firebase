@@ -10,6 +10,7 @@ const initialState = { email: "", password: "" }
 
 const Login = () => {
     const [state, setState] = useState(initialState);
+    const [isProcessing, setIsProcessing] = useState(false);
     const navigate = useNavigate();
     const { dispatch } = useAuthContext()
 
@@ -20,14 +21,10 @@ const Login = () => {
 
         const { email, password } = state;
 
-        if (!email) {
-            return message.error("please enter your email.")
-        }
-        if (password.length < 6) {
-            return message.error("please enter password at least 6 chracter.")
-        }
+        if (!window.isValidEmail(email)) { return window.toastify("Enter Your Valid Email.", "error") }
+        if (password.length < 6) { return window.toastify("Please Enter Password at least 6 chracter.", "error") }
 
-
+        setIsProcessing(true)
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
@@ -42,6 +39,8 @@ const Login = () => {
                     return message.error("Invalid Crediantial")
                 }
 
+            }).finally(() => {
+                setIsProcessing(false)
             });
     }
 
@@ -70,7 +69,7 @@ const Login = () => {
                             <Row>
                                 <Col span={24}>
                                     <Form.Item label="Email">
-                                        <Input size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
+                                        <Input type="email" size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={24}>
@@ -84,7 +83,7 @@ const Login = () => {
                                 </Col>
 
                                 <Col span={24}>
-                                    <Button size="large" type="primary" block onClick={handleSubmit}>Login</Button>
+                                    <Button size="large" type="primary" htmlType="submit" loading={isProcessing} block onClick={handleSubmit}>Login</Button>
                                 </Col>
                                 <Col span={24}>
                                     <Typography.Paragraph className="text-center mt-3 ">Don't have an account? <span className="underline"><Link to="/auth/register">Register</Link></span> </Typography.Paragraph>

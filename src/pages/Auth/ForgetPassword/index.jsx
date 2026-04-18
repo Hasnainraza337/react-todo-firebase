@@ -8,6 +8,8 @@ import { auth } from "@/config/firebase";
 
 const ForgetPassword = () => {
     const [state, setState] = useState({ email: "" });
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const navigate = useNavigate();
 
     const handleChange = e => setState(s => ({ ...s, [e.target.name]: e.target.value }))
@@ -17,19 +19,20 @@ const ForgetPassword = () => {
 
         const { email } = state;
 
-        if (!email) {
-            return message.error("please enter your email.")
-        }
+        if (!window.isValidEmail(email)) { return window.toastify("Please Enter Your Valid Email.", "error") }
 
+        setIsProcessing(true)
         sendPasswordResetEmail(auth, email)
             .then(() => {
-                message.success("Send email for reset password")
+                window.toastify("Email Send Successfuly!", "success")
                 navigate("/auth/login")
             })
             .catch((error) => {
-                console.log(error)
                 const errorCode = error.code;
-                message.error("something went wrong")
+                console.log(errorCode)
+                window.toastify("Try Again", "error")
+            }).finally(() => {
+                setIsProcessing(false)
             });
     }
 
@@ -59,12 +62,12 @@ const ForgetPassword = () => {
                             <Row>
                                 <Col span={24}>
                                     <Form.Item label="Email">
-                                        <Input size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
+                                        <Input type="email" size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
                                     </Form.Item>
                                 </Col>
 
                                 <Col span={24}>
-                                    <Button size="large" type="primary" block onClick={handleSubmit}>Send Email</Button>
+                                    <Button size="large" type="primary" htmlType="submit" loading={isProcessing} block onClick={handleSubmit}>Send Email</Button>
                                 </Col>
                             </Row>
                         </Form>

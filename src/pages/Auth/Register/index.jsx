@@ -1,6 +1,7 @@
-import { auth } from "@/config/firebase";
-import { Button, Card, Col, Form, Input, message, Row, Typography } from "antd"
+import { auth, firestore } from "@/config/firebase";
+import { Button, Card, Col, Form, Input, Row, Typography } from "antd"
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"
 
@@ -10,42 +11,50 @@ const initialState = { fullName: "", email: "", password: "", confirmPassword: "
 const Register = () => {
 
     const [state, setState] = useState(initialState)
+    const [isProcessing, setIsProcessing] = useState(false)
     const navigate = useNavigate()
 
 
     const handleChange = e => setState(s => ({ ...s, [e.target.name]: e.target.value }))
 
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
 
-        const { email, password, confirmPassword } = state;
+        const { fullName, email, password, confirmPassword } = state;
 
-        if (!email) {
-            return message.error("please enter your email.")
+        if (fullName.length < 3) { return window.toastify("Please Enter Your Full Name", "error") }
+        if (!window.isValidEmail(email)) { return window.toastify("Please Enter Your valid Email.", "error") }
+        if (password.length < 6) { return window.toastify("Password must be atleast 6 character", "error") }
+        if (confirmPassword !== password) { return window.toastify("Password not Match", "error") }
+
+        setIsProcessing(true)
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const userData = {
+                uid: user.uid,
+                fullName: fullName,
+                email: email,
+                createdAt: serverTimestamp()
+            };
+
+            await setDoc(doc(firestore, "users", user.uid), userData);
+
+            window.toastify("Created an account successfully", "success");
+            navigate("/auth/login");
+
+        } catch (error) {
+            const errorCode = error.code;
+            if (errorCode === "auth/email-already-in-use") {
+                window.toastify("Email already in Use", "error");
+            } else {
+                window.toastify("Something went wrong while creating user", "error");
+            }
+        } finally {
+            setIsProcessing(false);
         }
-        if (password.length < 6) {
-            return message.error("please enter password at least 6 chracter.")
-        }
-        if (confirmPassword !== password) {
-            return message.error("password not match")
-        }
 
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                console.log(user)
-                message.success("A New User Registered Successfully!")
-                navigate("/auth/login")
-            })
-            .catch((error) => {
-
-                const errorCode = error.code;
-                if (errorCode === "auth/email-already-in-use") {
-                    return message.error("Email already in use.")
-                }
-
-                message.error("something went wrong createing a user")
-            });
     }
 
 
@@ -75,12 +84,12 @@ const Register = () => {
                             <Row>
                                 <Col span={24}>
                                     <Form.Item label="FullName">
-                                        <Input size="large" name="fullName" placeholder="Enter Your Full Name" onChange={handleChange} />
+                                        <Input type="text" size="large" name="fullName" placeholder="Enter Your Full Name" onChange={handleChange} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={24}>
                                     <Form.Item label="Email">
-                                        <Input size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
+                                        <Input type="email" size="large" name="email" placeholder="Enter Your Email" onChange={handleChange} />
                                     </Form.Item>
                                 </Col>
                                 <Col span={24}>
@@ -94,7 +103,7 @@ const Register = () => {
                                     </Form.Item>
                                 </Col>
                                 <Col span={24}>
-                                    <Button size="large" type="primary" block onClick={handleSubmit}>Register</Button>
+                                    <Button size="large" type="primary" htmlType="submit" block loading={isProcessing} onClick={handleSubmit}>Register</Button>
                                 </Col>
                                 <Col span={24}>
                                     <Typography.Paragraph className="text-center mt-3 ">Already have an account? <span className="underline"><Link to="/auth/login">Login</Link></span> </Typography.Paragraph>

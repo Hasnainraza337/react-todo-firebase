@@ -1,11 +1,12 @@
 import { useAuthContext } from "@/context/AuthContext";
-import { Button, Col, Row } from "antd";
+import { Button } from "antd";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const { isAuth, handleLogout } = useAuthContext();
+    const navigate = useNavigate()
     return (
         <header className="bg-[#1D263B] border-b border-gray-100 shadow-sm sticky top-0 z-50">
 
@@ -21,10 +22,10 @@ const Navbar = () => {
                     <Link to="/" className="hover:text-amber-500 transition">Home</Link>
                     <Link to="/about" className="hover:text-amber-500 transition">About</Link>
                     <Link to="/contact" className="hover:text-amber-500 transition">Contact</Link>
-                    {isAuth ? <>
+                    {isAuth && <>
                         <Link to="/addTodos" className="hover:text-amber-500 transition">AddTodos</Link>
                         <Link to="/todos" className="hover:text-amber-500 transition">Todos</Link>
-                    </> : <></>}
+                    </>}
                 </ul>
 
                 {/* Desktop Buttons  */}
@@ -70,8 +71,10 @@ const Navbar = () => {
                     <Link to="/" className="block px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md">Home</Link>
                     <Link to="/about" className="block px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md">About</Link>
                     <Link to="/contact" className="block px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md">Contact</Link>
-                    <Link to="/addTodos" className="hover:text-amber-500 transition">AddTodos</Link>
-                    <Link to="/todos" className="block px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md">Todos</Link>
+                    {isAuth && <>
+                        <Link to="/addTodos" className="hover:text-amber-500 transition">AddTodos</Link>
+                        <Link to="/todos" className="hover:text-amber-500 transition">Todos</Link>
+                    </>}
                     <hr className="my-2" />
                     <div className="flex flex-col gap-2">
                         {!isAuth
