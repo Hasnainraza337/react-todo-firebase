@@ -21,7 +21,9 @@ const AuthContext = ({ children }) => {
             }
         });
 
-        setIsAppLoading(false)
+        setTimeout(() => {
+            setIsAppLoading(false)
+        }, 1000)
     }
 
 

@@ -8,6 +8,7 @@ import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import NoPage from "@/components/Misc/NoPage"
 import { useAuthContext } from "@/context/AuthContext"
+import PrivateRouting from "@/components/Misc/PrivateRouting"
 
 const Frontend = () => {
 
@@ -19,8 +20,8 @@ const Frontend = () => {
                     <Route path="/" element={<Home />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
-                    <Route path="/addTodos" element={<AddTodos />} />
-                    <Route path="/todos" element={<Todos />} />
+                    <Route path="/addTodos" element={<PrivateRouting Component={AddTodos} />} />
+                    <Route path="/todos" element={<PrivateRouting Component={Todos} />} />
                     <Route path="*" element={<NoPage />} />
                 </Routes>
             </main>

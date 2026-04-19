@@ -28,7 +28,7 @@ const Login = () => {
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
                 const user = userCredential.user;
-                // dispatch({ isAuth: true, user })
+                dispatch({ isAuth: true, user })
                 message.success("Login Successfull!")
                 navigate("/")
                 setState(initialState)
