@@ -1,6 +1,6 @@
 import { auth, firestore } from "@/config/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, query } from "firebase/firestore";
 import { createContext, useContext, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom";
 
@@ -12,69 +12,130 @@ const AuthContext = ({ children }) => {
     const [state, setState] = useState(initialState);
     const [isAppLoading, setIsAppLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false)
-    const [users, SetUsers] = useState([]);
+    const [users, setUsers] = useState([]);
     const navigate = useNavigate();
 
-    const readProfile = () => {
-        onAuthStateChanged(auth, (user) => {
+
+
+
+    useEffect(() => {
+        // ReadProfile
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (user) {
-                setState({ isAuth: true, user })
+                try {
+                    const docSnap = await getDoc(doc(firestore, "users", user.uid));
+                    if (docSnap.exists()) {
+                        const userData = docSnap.data();
+                        setState({ isAuth: true, user: { ...user, ...userData } });
+                    } else {
+                        setState({ isAuth: true, user });
+                    }
+                } catch (error) {
+                    console.error("Error fetching profile:", error);
+                }
+            } else {
+                setState(initialState);
             }
+            setIsAppLoading(false);
         });
 
-        setTimeout(() => {
-            setIsAppLoading(false)
-        }, 1000)
-    }
 
-
-    // get Users
-    const getUsers = () => {
-
-        try {
-            setIsProcessing(true)
-            const unsubscribe = onSnapshot(query(collection(firestore, "users")), (querySnapshot) => {
-                const array = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    array.push(data);
-                });
-                SetUsers(array);
-                setIsProcessing(false)
-            }, (error) => {
-                console.log("Error fetching users:", error);
-                setIsProcessing(false)
+        // geting Users
+        setIsProcessing(true);
+        const q = query(collection(firestore, "users"));
+        const unsubscribeUsers = onSnapshot(q, (querySnapshot) => {
+            const array = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data()
+                array.push({ ...data });
             });
-            return unsubscribe;
+            setUsers(array);
+            setIsProcessing(false);
+        }, (error) => {
+            console.error("Error fetching users:", error);
+            setIsProcessing(false);
+        });
 
-        } catch (e) {
-            setIsProcessing(false)
-            console.log("something went wrong", e);
-        }
-    };
-    // const getUsers = async () => {
+        return () => {
+            unsubscribeAuth();
+            unsubscribeUsers();
+        };
+    }, []);
+
+
+
+
+    // const readProfile = () => {
+    //     onAuthStateChanged(auth, async (user) => {
+    //         if (user) {
+    //             try {
+    //                 const docSnap = await getDoc(doc(firestore, "users", user.uid));
+    //                 if (docSnap.exists()) {
+    //                     const data = docSnap.data()
+    //                     setState({ isAuth: true, user: { ...user, ...data } })
+
+    //                 } else {
+    //                     setState({ isAuth: true, user })
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error fetching profile:", error)
+    //             }
+    //         } else {
+    //             setState(initialState)
+    //         }
+    //         setIsAppLoading(false)
+    //     });
+
+    // }
+
+
+    // // get Users
+    // const getUsers = () => {
+
     //     try {
-    //         const array = [];
-    //         const querySnapshot = await getDocs(query(collection(firestore, "users")));
-    //         querySnapshot.forEach((doc) => {
-    //             const data = doc.data()
-    //             array.push(data)
-    //         })
-    //         SetUsers(array);
+    //         setIsProcessing(true)
+    //         const unsubscribe = onSnapshot(query(collection(firestore, "users")), (querySnapshot) => {
+    //             const array = [];
+    //             querySnapshot.forEach((doc) => {
+    //                 const data = doc.data();
+    //                 array.push(data);
+    //             });
+    //             SetUsers(array);
+    //             setIsProcessing(false)
+    //         }, (error) => {
+    //             console.log("Error fetching users:", error);
+    //             setIsProcessing(false)
+    //         });
+    //         return unsubscribe;
+
     //     } catch (e) {
-    //         console.log("something went wrong", e)
+    //         setIsProcessing(false)
+    //         console.log("something went wrong", e);
     //     }
+    // };
+    // const getUsers = async () => {
+    // try {
+    //     const array = [];
+    //     const querySnapshot = await getDocs(query(collection(firestore, "users")));
+    //     querySnapshot.forEach((doc) => {
+    //         const data = doc.data()
+    //         array.push(data)
+    //     })
+    //     SetUsers(array);
+    // } catch (e) {
+    //     console.log("something went wrong", e)
+    // }
 
     // };
 
-    useEffect(() => {
-        readProfile();
+    // useEffect(() => {
+    //     readProfile();
 
-        const unsubscribeUsers = getUsers();
-        return () => {
-            if (unsubscribeUsers) unsubscribeUsers();
-        };
-    }, [])
+    //     const unsubscribeUsers = getUsers();
+    //     return () => {
+    //         if (unsubscribeUsers) unsubscribeUsers();
+    //     };
+    // }, [])
 
 
     const handleLogout = () => {
@@ -83,7 +144,7 @@ const AuthContext = ({ children }) => {
             window.toastify("Logout Successfull", "success")
             navigate("/")
         }).catch((error) => {
-            window.toastify("Logout Successfull", "error")
+            window.toastify("Logout Failed", "error")
         });
     }
 

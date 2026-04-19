@@ -4,11 +4,17 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss(),],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+export default defineConfig(({ mode }) => {
+  return {
+    plugins: [react(), tailwindcss()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
+    build: {
+      // Yahan mode check ho raha hai
+      sourcemap: mode === 'development',
+    },
+  }
 })
