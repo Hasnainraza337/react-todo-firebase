@@ -30,7 +30,7 @@ const Login = () => {
                 const user = userCredential.user;
                 dispatch({ isAuth: true, user })
                 message.success("Login Successfull!")
-                navigate("/")
+                navigate("/dashboard")
                 setState(initialState)
             })
             .catch((error) => {

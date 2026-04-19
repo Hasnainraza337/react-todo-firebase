@@ -1,12 +1,11 @@
 import { useAuthContext } from "@/context/AuthContext";
 import { Button } from "antd";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const { isAuth, handleLogout } = useAuthContext();
-    const navigate = useNavigate()
     return (
         <header className="bg-[#1D263B] border-b border-gray-100 shadow-sm sticky top-0 z-50">
 
