@@ -9,17 +9,12 @@
      flex: 1 0 auto;
  }
 
-
-
  main.auth {
      background-image: url(./assets/images/registerbg.jpg);
      background-size: cover;
      background-repeat: no-repeat;
      background-position: center;
  }
-
-
-
 
 
  /* Screen Loader */
