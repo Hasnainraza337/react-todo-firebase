@@ -1,6 +1,15 @@
 import { auth, firestore } from "@/config/firebase";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, doc, getDoc, onSnapshot, query } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -152,6 +161,39 @@ const AuthContext = ({ children }) => {
       });
   };
 
+  const updateUserRole = async (uid, newRole) => {
+    try {
+      setIsProcessing(true);
+      const userRef = doc(firestore, "users", uid);
+      await updateDoc(userRef, {
+        role: newRole,
+        updatedAt: serverTimestamp(),
+      });
+      // window.toastify(`Role updated to ${newRole} successfully`, "success");
+    } catch (error) {
+      console.error("Error updating role:", error);
+      // window.toastify("Failed to update role: " + error.message, "error");
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const deleteUser = async (uid) => {
+    try {
+      const userRef = doc(firestore, "users", uid);
+      setIsProcessing(true);
+      await deleteDoc(userRef);
+      // window.toastify("User deleted successfully", "success");
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      // window.toastify("Failed to delete user", "error");
+      throw error;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <authenticate.Provider
       value={{
@@ -160,6 +202,8 @@ const AuthContext = ({ children }) => {
         users,
         isProcessing,
         handleLogout,
+        updateUserRole,
+        deleteUser,
         dispatch: setState,
       }}
     >

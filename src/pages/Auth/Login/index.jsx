@@ -1,7 +1,9 @@
-import { auth } from "@/config/firebase";
+import { auth, firestore } from "@/config/firebase";
 import { useAuthContext } from "@/context/AuthContext";
-import { Button, Card, Col, Form, Input, message, Row, Typography } from "antd";
+import { Button, Card, Col, Form, Input, Row, Typography } from "antd";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,7 +18,8 @@ const Login = () => {
   const handleChange = (e) =>
     setState((s) => ({ ...s, [e.target.name]: e.target.value }));
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    // Function ko async banayein
     const { email, password } = state;
 
     if (!window.isValidEmail(email)) {
@@ -24,30 +27,95 @@ const Login = () => {
     }
     if (password.length < 6) {
       return window.toastify(
-        "Please Enter Password at least 6 chracter.",
+        "Please Enter Password at least 6 characters.",
         "error",
       );
     }
 
     setIsProcessing(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        const user = userCredential.user;
-        dispatch({ isAuth: true, user });
-        message.success("Login Successfull!");
-        navigate("/dashboard");
-        setState(initialState);
-      })
-      .catch((error) => {
-        const errorCode = error.code;
-        if (errorCode === "auth/invalid-credential") {
-          return message.error("Invalid Crediantial");
-        }
-      })
-      .finally(() => {
-        setIsProcessing(false);
-      });
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      let userRoles = ["user"];
+
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        userRoles = Array.isArray(userData.role)
+          ? userData.role
+          : [userData.role || "user"];
+
+        dispatch({
+          isAuth: true,
+          user: { ...user, ...userData },
+          role: userRoles,
+        });
+      } else {
+        dispatch({ isAuth: true, user, role: ["user"] });
+      }
+
+      window.toastify("Login Successful!", "success");
+      navigate("/dashboard");
+      setState(initialState);
+    } catch (error) {
+      console.error(error);
+      if (error.code === "auth/invalid-credential") {
+        window.toastify("Invalid Credentials", "error");
+      } else {
+        window.toastify("Something went wrong", "error");
+      }
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  // const handleSubmit = () => {
+  //   const { email, password } = state;
+
+  //   if (!window.isValidEmail(email)) {
+  //     return window.toastify("Enter Your Valid Email.", "error");
+  //   }
+  //   if (password.length < 6) {
+  //     return window.toastify(
+  //       "Please Enter Password at least 6 chracter.",
+  //       "error",
+  //     );
+  //   }
+
+  //   setIsProcessing(true);
+  //   signInWithEmailAndPassword(auth, email, password)
+  //     .then((userCredential) => {
+  //       const user = userCredential.user;
+  //       const userDocRef = doc(firestore, "users", user.uid);
+  //       const userData = getDoc(userDocRef);
+  //       dispatch({
+  //         isAuth: true,
+  //         user,
+  //         role: Array.isArray(userData.role)
+  //           ? userData.role
+  //           : [userData.role || "user"],
+  //       });
+  //       window.toastify("Login Successfull!", "success");
+  //       navigate("/dashboard");
+  //       setState(initialState);
+  //     })
+  //     .catch((error) => {
+  //       const errorCode = error.code;
+  //       if (errorCode === "auth/invalid-credential") {
+  //         return window.toastify("Invalid Crediantial", "error");
+  //       }
+  //     })
+  //     .finally(() => {
+  //       setIsProcessing(false);
+  //     });
+  // };
 
   return (
     <>

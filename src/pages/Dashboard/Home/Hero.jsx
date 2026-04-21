@@ -26,6 +26,8 @@ import {
 } from "@ant-design/icons";
 import { useAuthContext } from "@/context/AuthContext";
 import dayjs from "dayjs";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { auth, firestore } from "@/config/firebase";
 
 const { Title, Text } = Typography;
 
@@ -40,12 +42,35 @@ const Hero = () => {
     amber: "#FFBF00",
     textLight: "rgba(255, 255, 255, 0.85)",
   };
+  const handleUpdateProfile = async (values) => {
+    const { fullName } = values;
+    const hide = message.loading("Updating profile...", 0);
 
-  const handleUpdateProfile = (values) => {
-    console.log("Updated Details:", values);
-    // Yahan aap apni update functionality (Firebase/API) integrate karenge
-    message.success("Profile updated successfully!");
-    setIsEditModalOpen(false);
+    try {
+      const currentUser = auth.currentUser;
+
+      if (!currentUser) {
+        throw new Error("User not found!");
+      }
+      const userDocRef = doc(firestore, "users", currentUser.uid);
+
+      await updateDoc(userDocRef, {
+        fullName: fullName,
+        updatedAt: new Date().toISOString(),
+      });
+
+      window.toastify("Profile updated successfully!", "success");
+      setIsEditModalOpen(false);
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error:", error);
+      window.toastify(error.message || "Update failed", "error");
+    } finally {
+      hide();
+    }
   };
 
   return (
@@ -59,7 +84,7 @@ const Hero = () => {
           boxShadow: "0 15px 35px rgba(29, 38, 59, 0.15)",
           background: "#ffffff",
         }}
-        bodyStyle={{ padding: 0 }}
+        styles={{ body: { padding: 0 } }}
       >
         {/* Navy Header Banner */}
         <div
@@ -205,7 +230,7 @@ const Hero = () => {
                   <Descriptions.Item
                     label={
                       <Text type="secondary" style={{ fontSize: "12px" }}>
-                        SYSTEM IDENTITY (UID)
+                        UID
                       </Text>
                     }
                   >
@@ -256,14 +281,14 @@ const Hero = () => {
             />
           </Form.Item>
 
-          <Form.Item label="Avatar URL" name="photoURL">
+          {/* <Form.Item label="Avatar URL" name="photoURL">
             <Input
               prefix={<LinkOutlined style={{ color: "#ccc" }} />}
               placeholder="https://example.com/photo.jpg"
             />
-          </Form.Item>
+          </Form.Item> */}
 
-          <Divider />
+          {/* <Divider /> */}
 
           <div style={{ textAlign: "right" }}>
             <Space>
@@ -279,18 +304,6 @@ const Hero = () => {
           </div>
         </Form>
       </Modal>
-
-      <style jsx global>{`
-        .modern-descriptions .ant-descriptions-item-label {
-          padding-bottom: 8px !important;
-        }
-        .hero-card {
-          transition: all 0.4s ease;
-        }
-        .hero-card:hover {
-          transform: translateY(-8px);
-        }
-      `}</style>
     </div>
   );
 };

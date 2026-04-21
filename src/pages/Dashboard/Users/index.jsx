@@ -1,12 +1,39 @@
-import { Table, Card, Typography, Button, Tag, Tooltip } from "antd";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import {
+  Table,
+  Card,
+  Typography,
+  Button,
+  Tag,
+  Tooltip,
+  Select,
+  Popconfirm,
+} from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
 import { useAuthContext } from "@/context/AuthContext";
 import dayjs from "dayjs";
 
 const { Title } = Typography;
 
 const Users = () => {
-  const { users, isProcessing } = useAuthContext();
+  const { users, isProcessing, updateUserRole, deleteUser } = useAuthContext();
+
+  const handleRoleChange = async (uid, newRole) => {
+    try {
+      await updateUserRole(uid, newRole);
+      window.toastify(`Role updated to ${newRole}`, "success");
+    } catch (error) {
+      window.toastify("Failed to update role", "error");
+    }
+  };
+
+  const handleDelete = async (uid) => {
+    try {
+      await deleteUser(uid);
+      window.toastify("User deleted successfully", "success");
+    } catch (error) {
+      window.toastify("Failed to delete user", "error");
+    }
+  };
 
   const columns = [
     {
@@ -27,13 +54,28 @@ const Users = () => {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (text) => text,
+      render: (status) => (
+        <Tag color={status === "active" ? "green" : "red"}>
+          {status?.toUpperCase() || "IDLE"}
+        </Tag>
+      ),
     },
     {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (text) => text,
+      render: (role, record) => (
+        <Select
+          defaultValue={role}
+          style={{ width: 120 }}
+          onChange={(value) => handleRoleChange(record.uid, value)}
+          options={[
+            { value: "user", label: "User" },
+            { value: "admin", label: "Admin" },
+            { value: "super_admin", label: "Super Admin" },
+          ]}
+        />
+      ),
     },
     {
       title: "CreatedAt",
@@ -42,29 +84,36 @@ const Users = () => {
       render: (value) =>
         value ? dayjs(value.toDate()).format("MMMM D, YYYY h:mm A") : "N/A",
     },
-    // {
-    //     title: 'Action',
-    //     key: 'action',
-    //     width: 150,
-    //     render: (_, record) => (
-    //         <div className="flex gap-2">
-    //             <Button
-    //                 type="text"
-    //                 className="text-orange-500 hover:text-orange-600"
-    //                 icon={<EditOutlined />}
 
-    //             />
-    //             <Tooltip title="Delete User">
-    //                 <Button
-    //                     danger
-    //                     type="text"
-    //                     icon={<DeleteOutlined />}
-    //                     onClick={() => deleteUser(record.uid)}
-    //                 />
-    //             </Tooltip>
-    //         </div>
-    //     ),
-    // },
+    {
+      title: "Action",
+      key: "action",
+      fixed: "right",
+      width: 100,
+      render: (_, record) => (
+        <div className="flex gap-2">
+          {/* <Tooltip title="Edit User Details">
+            <Button
+              type="text"
+              icon={<EditOutlined className="text-blue-500" />}
+              onClick={() => console.log("Edit User", record)}
+            />
+          </Tooltip> */}
+          <Tooltip title="Delete User">
+            <Popconfirm
+              title="Delete the user"
+              description="Are you sure to delete this user?"
+              onConfirm={() => handleDelete(record.uid)}
+              okText="Yes"
+              cancelText="No"
+              okButtonProps={{ danger: true }}
+            >
+              <Button type="text" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </Tooltip>
+        </div>
+      ),
+    },
   ];
 
   return (

@@ -22,13 +22,19 @@ const Frontend = () => {
           <Route
             path="/addTodos"
             element={
-              <PrivateRouting Component={AddTodos} allowedRoles={["user"]} />
+              <PrivateRouting
+                Component={AddTodos}
+                allowedRoles={["admin", "user", "super_admin"]}
+              />
             }
           />
           <Route
             path="/todos"
             element={
-              <PrivateRouting Component={Todos} allowedRoles={["user"]} />
+              <PrivateRouting
+                Component={Todos}
+                allowedRoles={["admin", "user", "super_admin"]}
+              />
             }
           />
           <Route path="*" element={<NoPage />} />
